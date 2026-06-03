@@ -1,10 +1,19 @@
 using MesoShqip.Application;
 using MesoShqip.Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using MesoShqip.Infrastructure.Data;
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("MesoShqipPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -47,10 +56,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("MesoShqipPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.Run();
 
 using (var scope = app.Services.CreateScope())
 {
