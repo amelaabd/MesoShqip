@@ -1,0 +1,36 @@
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/node_modules/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# User files
+*.user
+*.suo
+*.userprefs
+
+# Logs
+*.log
+**/logs/
+
+# Connection strings
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/secrets.json
+**/appsettings.json
+
+# OS files
+.DS_Store
+Thumbs.db

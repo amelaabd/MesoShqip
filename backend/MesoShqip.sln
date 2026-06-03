@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MesoShqip.API", "MesoShqip.API\MesoShqip.API.csproj", "{9214A2B7-2A60-4BBF-84DC-CFAAB9D5C119}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MesoShqip.Application", "MesoShqip.Application\MesoShqip.Application.csproj", "{F61530CF-4998-4F3D-B9FF-A39A15744DF5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MesoShqip.Domain", "MesoShqip.Domain\MesoShqip.Domain.csproj", "{2B7734CE-BC60-49E6-BB86-311B0FC32CB5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MesoShqip.Infrastructure", "MesoShqip.Infrastructure\MesoShqip.Infrastructure.csproj", "{59380BC0-DF88-4F86-8542-367137D88E0C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9214A2B7-2A60-4BBF-84DC-CFAAB9D5C119}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9214A2B7-2A60-4BBF-84DC-CFAAB9D5C119}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9214A2B7-2A60-4BBF-84DC-CFAAB9D5C119}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9214A2B7-2A60-4BBF-84DC-CFAAB9D5C119}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F61530CF-4998-4F3D-B9FF-A39A15744DF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F61530CF-4998-4F3D-B9FF-A39A15744DF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F61530CF-4998-4F3D-B9FF-A39A15744DF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F61530CF-4998-4F3D-B9FF-A39A15744DF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B7734CE-BC60-49E6-BB86-311B0FC32CB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B7734CE-BC60-49E6-BB86-311B0FC32CB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B7734CE-BC60-49E6-BB86-311B0FC32CB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B7734CE-BC60-49E6-BB86-311B0FC32CB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59380BC0-DF88-4F86-8542-367137D88E0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59380BC0-DF88-4F86-8542-367137D88E0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59380BC0-DF88-4F86-8542-367137D88E0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59380BC0-DF88-4F86-8542-367137D88E0C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
