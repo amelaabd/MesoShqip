@@ -1,6 +1,8 @@
 using MesoShqip.Application;
 using MesoShqip.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using MesoShqip.Infrastructure.Data;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,4 +50,12 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.Run();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await SeedData.SeedAsync(context);
+}
+
 app.Run();
