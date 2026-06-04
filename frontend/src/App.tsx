@@ -7,7 +7,8 @@ import DashboardPage from "./pages/Dashboard/DashboardPage";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import AdminRoute from "./components/Layout/AdminRoute";
-
+import FlashcardPage from "./pages/Lesson/FlashcardPage";
+import QuizPage from "./pages/Lesson/QuizPage";
 const queryClient = new QueryClient();
 
 export default function App() {
@@ -33,6 +34,22 @@ export default function App() {
               <AdminRoute>
                 <AdminDashboard />
               </AdminRoute>
+            }
+          />
+          <Route
+            path="/lesson/:lessonId"
+            element={
+              <ProtectedRoute>
+                <FlashcardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/quiz/:lessonId"
+            element={
+              <ProtectedRoute>
+                <QuizPage />
+              </ProtectedRoute>
             }
           />
         </Routes>

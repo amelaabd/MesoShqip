@@ -9,8 +9,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("MesoShqipPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
-              .AllowAnyHeader()
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+                      .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
