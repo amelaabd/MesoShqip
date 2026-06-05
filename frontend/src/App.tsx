@@ -5,10 +5,12 @@ import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
 import DashboardPage from "./pages/Dashboard/DashboardPage";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
-import ProtectedRoute from "./components/Layout/ProtectedRoute";
-import AdminRoute from "./components/Layout/AdminRoute";
 import FlashcardPage from "./pages/Lesson/FlashcardPage";
 import QuizPage from "./pages/Lesson/QuizPage";
+import StoryPage from "./pages/Story/StoryPage";
+import ProtectedRoute from "./components/Layout/ProtectedRoute";
+import AdminRoute from "./components/Layout/AdminRoute";
+
 const queryClient = new QueryClient();
 
 export default function App() {
@@ -49,6 +51,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <QuizPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/story"
+            element={
+              <ProtectedRoute>
+                <StoryPage />
               </ProtectedRoute>
             }
           />

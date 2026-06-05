@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getChildren, createChild } from "../../api/children";
@@ -7,11 +7,13 @@ import { getProgressSummary } from "../../api/progress";
 import { useAuthStore } from "../../store/authStore";
 import { useLogout } from "../../hooks/useAuth";
 import type { ChildProfile } from "../../types";
+import toast from "react-hot-toast";
 
 export default function DashboardPage() {
   const { username } = useAuthStore();
   const logout = useLogout();
   const navigate = useNavigate();
+
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
   const [showCreateChild, setShowCreateChild] = useState(false);
   const [newChild, setNewChild] = useState({
@@ -37,23 +39,31 @@ export default function DashboardPage() {
     enabled: !!selectedChild,
   });
 
-  const handleCreateChild = async (e: React.FormEvent) => {
+  const createMutation = useMutation({
+    mutationFn: createChild,
+    onSuccess: () => {
+      refetchChildren();
+      setShowCreateChild(false);
+      setNewChild({
+        displayName: "",
+        avatarCode: "eagle",
+        nativeLanguage: "en",
+        startingLevel: 1,
+      });
+      toast.success("Profili u krijua me sukses!");
+    },
+    onError: () => toast.error("Gabim gjatë krijimit. Provo sërish."),
+  });
+
+  const handleCreateChild = (e: React.FormEvent) => {
     e.preventDefault();
-    await createChild(newChild);
-    refetchChildren();
-    setShowCreateChild(false);
-    setNewChild({
-      displayName: "",
-      avatarCode: "eagle",
-      nativeLanguage: "en",
-      startingLevel: 1,
-    });
+    createMutation.mutate(newChild);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
         <h1 className="text-2xl font-black text-red-600">
           Mëso<span className="text-teal-500">Shqip</span>
         </h1>
@@ -63,7 +73,7 @@ export default function DashboardPage() {
           </span>
           <button
             onClick={logout}
-            className="text-sm font-bold text-red-500 hover:text-red-700"
+            className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors"
           >
             Çkyçu
           </button>
@@ -72,9 +82,12 @@ export default function DashboardPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Hero */}
-        <div className="bg-red-600 rounded-3xl p-6 text-white mb-6">
+        <div className="bg-red-600 rounded-3xl p-6 text-white mb-6 relative overflow-hidden">
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 text-6xl opacity-20">
+            🦅
+          </div>
           <p className="text-sm opacity-80 mb-1">Mirë se erdhe,</p>
-          <h2 className="text-3xl font-black mb-2">{username}! 🦅</h2>
+          <h2 className="text-3xl font-black mb-2">{username}! 👋</h2>
           <p className="text-sm opacity-80">
             Zgjidh profilin e fëmijës për të vazhduar mësimet.
           </p>
@@ -97,12 +110,12 @@ export default function DashboardPage() {
           {children?.length === 0 && (
             <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
               <p className="text-4xl mb-3">👶</p>
-              <p className="text-gray-500 font-semibold">
+              <p className="text-gray-500 font-semibold mb-4">
                 Nuk ke profile ende.
               </p>
               <button
                 onClick={() => setShowCreateChild(true)}
-                className="mt-4 px-6 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700"
+                className="px-6 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700"
               >
                 Krijo profilin e parë
               </button>
@@ -122,7 +135,7 @@ export default function DashboardPage() {
               >
                 <div className="text-3xl mb-2">🦅</div>
                 <p className="font-black text-gray-800">{child.displayName}</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-400 mt-1">
                   {child.currentLevel}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
@@ -183,12 +196,26 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Lessons */}
+        {/* Lessons + Story */}
         {selectedChild && (
           <div>
             <h3 className="text-lg font-black text-gray-800 mb-4">
               Mësimet e disponueshme
             </h3>
+
+            {/* Story button */}
+            <button
+              onClick={() =>
+                navigate(
+                  `/story?childId=${selectedChild.id}&lessonId=${lessons?.[0]?.id ?? ""}`,
+                )
+              }
+              className="w-full py-4 bg-teal-500 text-white font-black rounded-2xl hover:bg-teal-600 transition-all flex items-center justify-center gap-2 mb-4"
+            >
+              ✨ Gjenero historinë e sotme
+            </button>
+
+            {/* Lessons list */}
             <div className="grid gap-3">
               {lessons?.map((lesson) => (
                 <button
@@ -205,11 +232,24 @@ export default function DashboardPage() {
                     <p className="font-black text-gray-800">
                       {lesson.titleAlbanian}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-400">
                       {lesson.level} · {lesson.vocabularyCount} fjalë
                     </p>
                   </div>
-                  <span className="text-gray-400 text-xl">›</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(
+                          `/quiz/${lesson.id}?childId=${selectedChild.id}`,
+                        );
+                      }}
+                      className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full hover:bg-purple-200"
+                    >
+                      Quiz
+                    </button>
+                    <span className="text-gray-400 text-xl">›</span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -220,12 +260,22 @@ export default function DashboardPage() {
       {/* Create Child Modal */}
       {showCreateChild && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center px-4 z-50">
-          <div className="bg-white rounded-3xl p-8 w-full max-w-md">
-            <h3 className="text-xl font-black mb-6">Krijo profil të ri</h3>
+          <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-gray-800">
+                Krijo profil të ri
+              </h3>
+              <button
+                onClick={() => setShowCreateChild(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"
+              >
+                ✕
+              </button>
+            </div>
             <form onSubmit={handleCreateChild} className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Emri
+                  Emri i fëmijës
                 </label>
                 <input
                   type="text"
@@ -235,9 +285,10 @@ export default function DashboardPage() {
                   }
                   placeholder="p.sh. Amela"
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   Gjuha amtare
@@ -247,7 +298,7 @@ export default function DashboardPage() {
                   onChange={(e) =>
                     setNewChild({ ...newChild, nativeLanguage: e.target.value })
                   }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-red-400"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-red-400 transition-all"
                 >
                   <option value="en">🇬🇧 English</option>
                   <option value="de">🇩🇪 Deutsch</option>
@@ -257,6 +308,7 @@ export default function DashboardPage() {
                   <option value="tr">🇹🇷 Türkçe</option>
                 </select>
               </div>
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   Niveli fillestar
@@ -269,26 +321,28 @@ export default function DashboardPage() {
                       startingLevel: Number(e.target.value),
                     })
                   }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-red-400"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-red-400 transition-all"
                 >
                   <option value={1}>🌱 Fillestor</option>
                   <option value={2}>📖 Mesatar</option>
                   <option value={3}>🚀 Avancuar</option>
                 </select>
               </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateChild(false)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 hover:bg-gray-50"
+                  className="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-gray-600 hover:bg-gray-50 transition-all"
                 >
                   Anulo
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700"
+                  disabled={createMutation.isPending}
+                  className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-all disabled:opacity-50"
                 >
-                  Krijo
+                  {createMutation.isPending ? "Duke krijuar..." : "Krijo"}
                 </button>
               </div>
             </form>
