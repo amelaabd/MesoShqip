@@ -4,7 +4,7 @@ namespace MesoShqip.Domain.Entities;
 
 public class QuizSession : BaseEntity
 {
-    public Guid ChildProfileId { get; set; }
+    public Guid UserId { get; set; }
     public string QuizType { get; set; } = "Vocabulary";
     public string QuestionsJson { get; set; } = "[]";
     public int TotalQuestions { get; set; }
@@ -12,5 +12,5 @@ public class QuizSession : BaseEntity
     public int PointsEarned { get; set; } = 0;
     public DateTime? CompletedAt { get; set; }
 
-    public ChildProfile ChildProfile { get; set; } = null!;
+    public User User { get; set; } = null!;
 }

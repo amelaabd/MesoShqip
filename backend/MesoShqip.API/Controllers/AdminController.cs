@@ -1,4 +1,3 @@
-using MediatR;
 using MesoShqip.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,8 +27,12 @@ public class AdminController : ControllerBase
                 u.Username,
                 u.Email,
                 u.Role,
-                u.CreatedAt,
-                ChildCount = u.ChildProfiles.Count()
+                u.NativeLanguage,
+                u.Level,
+                u.TotalPoints,
+                u.CurrentStreak,
+                u.OnboardingCompleted,
+                u.CreatedAt
             })
             .ToListAsync(ct);
         return Ok(users);
@@ -40,38 +43,36 @@ public class AdminController : ControllerBase
     {
         var stats = new
         {
-            TotalUsers = await _context.Users.CountAsync(ct),
-            TotalChildren = await _context.ChildProfiles.CountAsync(ct),
+            TotalUsers = await _context.Users.CountAsync(u => u.Role != "Admin", ct),
             TotalLessons = await _context.Lessons.CountAsync(ct),
             TotalQuizzes = await _context.QuizSessions.CountAsync(ct),
             TotalStories = await _context.AiStories.CountAsync(ct),
-            ActiveToday = await _context.ChildProfiles
-                                   .CountAsync(c => c.LastActivityDate >= DateTime.UtcNow.AddDays(-1), ct),
+            ActiveToday = await _context.Users.CountAsync(
+                                   u => u.LastActivityDate >= DateTime.UtcNow.AddDays(-1), ct),
             CompletedLessons = await _context.LessonProgresses
                                    .CountAsync(p => p.Status == Domain.Enums.ProgressStatus.Completed, ct)
         };
         return Ok(stats);
     }
 
-    [HttpGet("children")]
-    public async Task<IActionResult> GetAllChildren(CancellationToken ct)
+    [HttpGet("lessons")]
+    public async Task<IActionResult> GetAllLessons(CancellationToken ct)
     {
-        var children = await _context.ChildProfiles
-            .Include(c => c.Parent)
-            .Select(c => new
+        var lessons = await _context.Lessons
+            .Select(l => new
             {
-                c.Id,
-                c.DisplayName,
-                c.CurrentLevel,
-                c.TotalPoints,
-                c.CurrentStreak,
-                c.NativeLanguage,
-                c.LastActivityDate,
-                ParentEmail = c.Parent.Email,
-                ParentUsername = c.Parent.Username
+                l.Id,
+                l.TitleAlbanian,
+                l.TitleEnglish,
+                l.Level,
+                l.LessonType,
+                l.IsPublished,
+                l.OrderIndex,
+                VocabCount = l.VocabularyItems.Count()
             })
+            .OrderBy(l => l.OrderIndex)
             .ToListAsync(ct);
-        return Ok(children);
+        return Ok(lessons);
     }
 
     [HttpPut("users/{userId}/role")]
@@ -93,26 +94,6 @@ public class AdminController : ControllerBase
         _context.Users.Remove(user);
         await _context.SaveChangesAsync(ct);
         return Ok(new { message = "Useri u fshi me sukses." });
-    }
-
-    [HttpGet("lessons")]
-    public async Task<IActionResult> GetAllLessons(CancellationToken ct)
-    {
-        var lessons = await _context.Lessons
-            .Select(l => new
-            {
-                l.Id,
-                l.TitleAlbanian,
-                l.TitleEnglish,
-                l.Level,
-                l.LessonType,
-                l.IsPublished,
-                l.OrderIndex,
-                VocabCount = l.VocabularyItems.Count()
-            })
-            .OrderBy(l => l.OrderIndex)
-            .ToListAsync(ct);
-        return Ok(lessons);
     }
 
     [HttpPut("lessons/{lessonId}/publish")]

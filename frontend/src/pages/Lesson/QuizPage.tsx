@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getLessonById } from "../../api/lessons";
@@ -8,6 +8,30 @@ interface Question {
   question: string;
   correct: number;
   options: string[];
+}
+
+function buildQuestions(words: any[], nativeLanguage: string): Question[] {
+  return words.slice(0, 5).map((word, i) => {
+    const correctWord =
+      nativeLanguage === "en" ? word.wordEnglish : word.wordEnglish;
+
+    const wrongWords = words
+      .filter((_, idx) => idx !== i)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+      .map((w) => w.wordEnglish);
+
+    const shuffled = [...wrongWords, correctWord].sort(
+      () => Math.random() - 0.5,
+    );
+    const correctIndex = shuffled.indexOf(correctWord);
+
+    return {
+      question: `Çfarë do të thotë "${word.wordAlbanian}"?`,
+      correct: correctIndex,
+      options: shuffled,
+    };
+  });
 }
 
 export default function QuizPage() {
@@ -28,6 +52,11 @@ export default function QuizPage() {
     enabled: !!lessonId,
   });
 
+  const questions = useMemo(() => {
+    if (!lesson?.vocabularyItems?.length) return [];
+    return buildQuestions(lesson.vocabularyItems, "en");
+  }, [lesson]);
+
   if (isLoading)
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -35,27 +64,12 @@ export default function QuizPage() {
       </div>
     );
 
-  const words = lesson?.vocabularyItems ?? [];
-
-  // Generate quiz questions from vocabulary
-  const questions: Question[] = words.slice(0, 5).map((word, i) => {
-    const wrongWords = words
-      .filter((_, idx) => idx !== i)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3)
-      .map((w) => w.wordEnglish);
-
-    const options = [...wrongWords, word.wordEnglish].sort(
-      () => Math.random() - 0.5,
+  if (!questions.length)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-400 font-bold">Nuk ka fjalë për kuiz.</p>
+      </div>
     );
-    const correctIndex = options.indexOf(word.wordEnglish);
-
-    return {
-      question: `Çfarë do të thotë "${word.wordAlbanian}"?`,
-      correct: correctIndex,
-      options,
-    };
-  });
 
   const current = questions[qIndex];
   const progressPct = Math.round((qIndex / questions.length) * 100);
@@ -68,11 +82,10 @@ export default function QuizPage() {
   };
 
   const handleNext = () => {
-    if (qIndex + 1 >= questions.length) {
-      const scorePercent = Math.round(
-        ((correct + (chosen === current.correct ? 1 : 0)) / questions.length) *
-          100,
-      );
+    const isLast = qIndex + 1 >= questions.length;
+    if (isLast) {
+      const finalCorrect = correct + (chosen === current.correct ? 1 : 0);
+      const scorePercent = Math.round((finalCorrect / questions.length) * 100);
       updateProgress({
         childProfileId: childId,
         lessonId: lessonId!,
@@ -86,8 +99,17 @@ export default function QuizPage() {
     }
   };
 
+  const handleRestart = () => {
+    setFinished(false);
+    setQIndex(0);
+    setCorrect(0);
+    setChosen(null);
+    setAnswered(false);
+  };
+
   if (finished) {
-    const pct = Math.round((correct / questions.length) * 100);
+    const finalCorrect = correct;
+    const pct = Math.round((finalCorrect / questions.length) * 100);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl border border-gray-100 p-10 w-full max-w-md text-center">
@@ -96,7 +118,7 @@ export default function QuizPage() {
           </p>
           <h2 className="text-4xl font-black text-red-600 mb-1">{pct}%</h2>
           <p className="text-gray-500 mb-1">
-            {correct} / {questions.length} saktë
+            {finalCorrect} / {questions.length} saktë
           </p>
           <p className="font-bold text-lg text-gray-700 mb-8">
             {pct >= 80
@@ -107,13 +129,7 @@ export default function QuizPage() {
           </p>
           <div className="flex gap-3">
             <button
-              onClick={() => {
-                setFinished(false);
-                setQIndex(0);
-                setCorrect(0);
-                setChosen(null);
-                setAnswered(false);
-              }}
+              onClick={handleRestart}
               className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50"
             >
               Provo sërish
@@ -132,11 +148,10 @@ export default function QuizPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
         <button
           onClick={() => navigate("/dashboard")}
-          className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold"
+          className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600"
         >
           ‹
         </button>
@@ -150,7 +165,6 @@ export default function QuizPage() {
         </span>
       </div>
 
-      {/* Progress */}
       <div className="h-2 bg-gray-100">
         <div
           className="h-2 bg-red-500 transition-all duration-500"
@@ -159,19 +173,17 @@ export default function QuizPage() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-8">
-        {/* Question card */}
         <div className="bg-white rounded-3xl border border-gray-100 p-6 mb-6">
           <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-3">
             Pyetja {qIndex + 1}
           </p>
           <p className="text-xl font-black text-gray-800 leading-snug">
-            {current?.question}
+            {current.question}
           </p>
         </div>
 
-        {/* Options */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          {current?.options.map((opt, idx) => {
+          {current.options.map((opt, idx) => {
             let style =
               "bg-white border-2 border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50";
             if (answered) {
@@ -193,7 +205,6 @@ export default function QuizPage() {
           })}
         </div>
 
-        {/* Feedback */}
         {answered && (
           <div
             className={`rounded-2xl p-4 mb-4 text-center font-bold ${
@@ -204,11 +215,10 @@ export default function QuizPage() {
           >
             {chosen === current.correct
               ? "🎉 Saktë! Bravo!"
-              : `❌ Gabim! Përgjigja e saktë: "${current.options[current.correct]}"`}
+              : `❌ Gabim! Përgjigja: "${current.options[current.correct]}"`}
           </div>
         )}
 
-        {/* Next button */}
         {answered && (
           <button
             onClick={handleNext}

@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MesoShqip.Domain.Entities;
 using System.Reflection;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 
 namespace MesoShqip.Infrastructure.Data;
 
@@ -11,7 +9,6 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     public DbSet<User> Users => Set<User>();
-    public DbSet<ChildProfile> ChildProfiles => Set<ChildProfile>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<VocabularyItem> VocabularyItems => Set<VocabularyItem>();
     public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
@@ -19,7 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<QuizSession> QuizSessions => Set<QuizSession>();
     public DbSet<PronunciationAttempt> PronunciationAttempts => Set<PronunciationAttempt>();
     public DbSet<Badge> Badges => Set<Badge>();
-    public DbSet<ChildBadge> ChildBadges => Set<ChildBadge>();
+    public DbSet<UserBadge> UserBadges => Set<UserBadge>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

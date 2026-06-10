@@ -1,5 +1,6 @@
 using MediatR;
 using MesoShqip.Application.Common.Models;
+using MesoShqip.Application.Interfaces;
 using MesoShqip.Domain.Entities;
 using MesoShqip.Domain.Enums;
 using MesoShqip.Domain.Interfaces;
@@ -7,7 +8,6 @@ using MesoShqip.Domain.Interfaces;
 namespace MesoShqip.Application.Features.Progress.Commands;
 
 public record UpdateProgressCommand(
-    Guid ChildProfileId,
     Guid LessonId,
     int ScorePercent
 ) : IRequest<Result<bool>>;
@@ -15,23 +15,28 @@ public record UpdateProgressCommand(
 public class UpdateProgressHandler : IRequestHandler<UpdateProgressCommand, Result<bool>>
 {
     private readonly IRepository<LessonProgress> _progressRepo;
-    private readonly IRepository<ChildProfile> _childRepo;
+    private readonly IRepository<User> _userRepo;
     private readonly IUnitOfWork _uow;
+    private readonly ICurrentUserService _currentUser;
 
     public UpdateProgressHandler(
         IRepository<LessonProgress> progressRepo,
-        IRepository<ChildProfile> childRepo,
-        IUnitOfWork uow)
+        IRepository<User> userRepo,
+        IUnitOfWork uow,
+        ICurrentUserService currentUser)
     {
         _progressRepo = progressRepo;
-        _childRepo = childRepo;
+        _userRepo = userRepo;
         _uow = uow;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<bool>> Handle(UpdateProgressCommand request, CancellationToken ct)
     {
+        var userId = _currentUser.UserId;
+
         var progresses = await _progressRepo.FindAsync(
-            p => p.ChildProfileId == request.ChildProfileId && p.LessonId == request.LessonId, ct);
+            p => p.UserId == userId && p.LessonId == request.LessonId, ct);
 
         var progress = progresses.FirstOrDefault();
 
@@ -39,7 +44,7 @@ public class UpdateProgressHandler : IRequestHandler<UpdateProgressCommand, Resu
         {
             progress = new LessonProgress
             {
-                ChildProfileId = request.ChildProfileId,
+                UserId = userId,
                 LessonId = request.LessonId,
                 ScorePercent = request.ScorePercent,
                 AttemptsCount = 1,
@@ -60,13 +65,13 @@ public class UpdateProgressHandler : IRequestHandler<UpdateProgressCommand, Resu
             _progressRepo.Update(progress);
         }
 
-        var children = await _childRepo.FindAsync(c => c.Id == request.ChildProfileId, ct);
-        var child = children.FirstOrDefault();
-        if (child is not null)
+        var users = await _userRepo.FindAsync(u => u.Id == userId, ct);
+        var user = users.FirstOrDefault();
+        if (user is not null)
         {
-            child.TotalPoints += request.ScorePercent >= 90 ? 20 : request.ScorePercent >= 60 ? 10 : 0;
-            child.LastActivityDate = DateTime.UtcNow;
-            _childRepo.Update(child);
+            user.TotalPoints += request.ScorePercent >= 90 ? 20 : request.ScorePercent >= 60 ? 10 : 0;
+            user.LastActivityDate = DateTime.UtcNow;
+            _userRepo.Update(user);
         }
 
         await _uow.SaveChangesAsync(ct);

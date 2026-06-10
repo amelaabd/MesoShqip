@@ -18,10 +18,10 @@ public class ProgressController : ControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet("{childId}/summary")]
-    public async Task<IActionResult> GetSummary(Guid childId, CancellationToken ct)
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetSummary(CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetProgressSummaryQuery(childId), ct);
+        var result = await _mediator.Send(new GetProgressSummaryQuery(), ct);
         if (!result.IsSuccess)
             return NotFound(new { error = result.Error });
         return Ok(result.Data);
@@ -34,6 +34,6 @@ public class ProgressController : ControllerBase
         var result = await _mediator.Send(command, ct);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.Error });
-        return Ok(new { message = "Progresi u përditësua me sukses." });
+        return Ok(new { message = "Progresi u përditësua." });
     }
 }

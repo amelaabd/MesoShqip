@@ -5,7 +5,7 @@ namespace MesoShqip.Domain.Entities;
 
 public class AiStory : BaseEntity
 {
-    public Guid ChildProfileId { get; set; }
+    public Guid UserId { get; set; }
     public string TitleAlbanian { get; set; } = string.Empty;
     public string BodyAlbanian { get; set; } = string.Empty;
     public string BodyTranslated { get; set; } = string.Empty;
@@ -13,5 +13,5 @@ public class AiStory : BaseEntity
     public string NewWordsJson { get; set; } = "[]";
     public bool IsRead { get; set; } = false;
 
-    public ChildProfile ChildProfile { get; set; } = null!;
+    public User User { get; set; } = null!;
 }

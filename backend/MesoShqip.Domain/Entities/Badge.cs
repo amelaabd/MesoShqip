@@ -10,5 +10,5 @@ public class Badge : BaseEntity
     public string Category { get; set; } = string.Empty;
     public string CriteriaJson { get; set; } = "{}";
 
-    public ICollection<ChildBadge> ChildBadges { get; set; } = new List<ChildBadge>();
+    public ICollection<UserBadge> UserBadges { get; set; } = new List<UserBadge>();
 }

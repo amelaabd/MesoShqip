@@ -8,7 +8,6 @@ using System.Text.Json;
 namespace MesoShqip.Application.Features.AI.Commands;
 
 public record GenerateQuizCommand(
-    Guid ChildProfileId,
     IReadOnlyList<string> WeakWords
 ) : IRequest<Result<GenerateQuizResponse>>;
 
@@ -20,38 +19,41 @@ public record GenerateQuizResponse(
 public class GenerateQuizHandler : IRequestHandler<GenerateQuizCommand, Result<GenerateQuizResponse>>
 {
     private readonly IQuizGeneratorService _quizService;
-    private readonly IRepository<ChildProfile> _childRepo;
+    private readonly IRepository<User> _userRepo;
     private readonly IRepository<QuizSession> _sessionRepo;
     private readonly IUnitOfWork _uow;
+    private readonly ICurrentUserService _currentUser;
 
     public GenerateQuizHandler(
         IQuizGeneratorService quizService,
-        IRepository<ChildProfile> childRepo,
+        IRepository<User> userRepo,
         IRepository<QuizSession> sessionRepo,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        ICurrentUserService currentUser)
     {
         _quizService = quizService;
-        _childRepo = childRepo;
+        _userRepo = userRepo;
         _sessionRepo = sessionRepo;
         _uow = uow;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<GenerateQuizResponse>> Handle(
         GenerateQuizCommand request, CancellationToken ct)
     {
-        var children = await _childRepo.FindAsync(c => c.Id == request.ChildProfileId, ct);
-        var child = children.FirstOrDefault();
-        if (child is null)
-            return Result<GenerateQuizResponse>.Failure("Profili nuk u gjet.");
+        var users = await _userRepo.FindAsync(u => u.Id == _currentUser.UserId, ct);
+        var user = users.FirstOrDefault();
+        if (user is null)
+            return Result<GenerateQuizResponse>.Failure("Useri nuk u gjet.");
 
         var result = await _quizService.GenerateAsync(
-            child.NativeLanguage,
+            user.NativeLanguage,
             request.WeakWords,
             ct);
 
         var session = new QuizSession
         {
-            ChildProfileId = child.Id,
+            UserId = user.Id,
             QuizType = "AI-Generated",
             TotalQuestions = result.Questions.Count,
             QuestionsJson = JsonSerializer.Serialize(result.Questions)

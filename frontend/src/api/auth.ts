@@ -1,11 +1,14 @@
 import { apiClient } from "./client";
 import type { AuthResponse } from "../types";
 
-export const register = (data: {
+export const register = async (data: {
   username: string;
   email: string;
   password: string;
-}) => apiClient.post("/api/v1/auth/register", data);
+}) => {
+  const res = await apiClient.post("/api/v1/auth/register", data);
+  return res.data;
+};
 
 export const login = async (data: {
   email: string;

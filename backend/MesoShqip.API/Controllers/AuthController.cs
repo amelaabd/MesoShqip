@@ -1,5 +1,6 @@
 using MediatR;
 using MesoShqip.Application.Features.Auth.Commands;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MesoShqip.API.Controllers;
@@ -16,7 +17,8 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
+    public async Task<IActionResult> Register(
+        [FromBody] RegisterCommand command, CancellationToken ct)
     {
         var result = await _mediator.Send(command, ct);
         if (!result.IsSuccess)
@@ -25,11 +27,23 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken ct)
+    public async Task<IActionResult> Login(
+        [FromBody] LoginCommand command, CancellationToken ct)
     {
         var result = await _mediator.Send(command, ct);
         if (!result.IsSuccess)
             return Unauthorized(new { error = result.Error });
         return Ok(result.Data);
+    }
+
+    [HttpPost("onboarding")]
+    [Authorize]
+    public async Task<IActionResult> CompleteOnboarding(
+        [FromBody] CompleteOnboardingCommand command, CancellationToken ct)
+    {
+        var result = await _mediator.Send(command, ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.Error });
+        return Ok(new { message = "Onboarding u kompletua." });
     }
 }
