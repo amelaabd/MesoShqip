@@ -1,23 +1,22 @@
 import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { generateStory } from "../../api/stories";
-import { getLessonById } from "../../api/lessons";
+import { getLessons } from "../../api/lessons";
 import toast from "react-hot-toast";
 import type { StoryResponse } from "../../types";
 
 export default function StoryPage() {
-  const [searchParams] = useSearchParams();
-  const childId = searchParams.get("childId") ?? "";
-  const lessonId = searchParams.get("lessonId") ?? "";
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const lessonId = searchParams.get("lessonId");
+
   const [story, setStory] = useState<StoryResponse | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
 
-  const { data: lesson } = useQuery({
-    queryKey: ["lesson", lessonId],
-    queryFn: () => getLessonById(lessonId),
-    enabled: !!lessonId,
+  const { data: lessons } = useQuery({
+    queryKey: ["lessons"],
+    queryFn: () => getLessons(),
   });
 
   const mutation = useMutation({
@@ -30,16 +29,16 @@ export default function StoryPage() {
   });
 
   const handleGenerate = () => {
-    const words = lesson?.vocabularyItems
-      ?.slice(0, 5)
-      .map((v) => v.wordAlbanian) ?? ["shtëpia", "familja", "dashuria"];
+    const targetLesson = lessonId
+      ? lessons?.find((l) => l.id === lessonId)
+      : lessons?.[0];
 
-    mutation.mutate({ childProfileId: childId, wordsToIntroduce: words });
+    const words = ["shtëpia", "familja", "dashuria", "miqësia", "gëzimi"];
+    mutation.mutate({ wordsToIntroduce: words });
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
         <button
           onClick={() => navigate("/dashboard")}
@@ -57,16 +56,15 @@ export default function StoryPage() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6">
-        {/* Generate button */}
         {!story && (
           <div className="text-center py-16">
             <div className="text-7xl mb-6">🦅</div>
             <h2 className="text-2xl font-black text-gray-800 mb-3">
               Historia e sotme
             </h2>
-            <p className="text-gray-500 mb-8 max-w-xs mx-auto">
-              Claude AI do të krijojë një histori të personalizuar me fjalët që
-              ke mësuar.
+            <p className="text-gray-500 mb-8 max-w-xs mx-auto leading-relaxed">
+              Claude AI do të krijojë një histori të personalizuar sipas nivelit
+              tënd.
             </p>
             <button
               onClick={handleGenerate}
@@ -103,10 +101,8 @@ export default function StoryPage() {
           </div>
         )}
 
-        {/* Story content */}
         {story && (
           <div className="space-y-5">
-            {/* Story hero */}
             <div className="bg-teal-500 rounded-3xl p-6 text-white relative overflow-hidden">
               <div className="absolute right-4 top-1/2 -translate-y-1/2 text-6xl opacity-20">
                 🦅
@@ -119,7 +115,6 @@ export default function StoryPage() {
               </h2>
             </div>
 
-            {/* Story body */}
             <div className="bg-white rounded-2xl border border-gray-100 p-6">
               <div className="flex justify-between items-center mb-4">
                 <p className="text-xs font-black text-gray-400 uppercase tracking-wide">
@@ -132,10 +127,9 @@ export default function StoryPage() {
                   {showTranslation ? "Fshih përkthimin" : "Shfaq përkthimin"}
                 </button>
               </div>
-              <p className="text-gray-800 leading-relaxed text-base">
+              <p className="text-gray-800 leading-relaxed">
                 {story.bodyAlbanian}
               </p>
-
               {showTranslation && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-3">
@@ -148,7 +142,6 @@ export default function StoryPage() {
               )}
             </div>
 
-            {/* New words */}
             {story.newWords?.length > 0 && (
               <div>
                 <p className="font-black text-gray-800 mb-3">
@@ -160,9 +153,7 @@ export default function StoryPage() {
                       key={i}
                       className="bg-amber-50 border border-amber-200 rounded-2xl p-4"
                     >
-                      <p className="font-black text-amber-800 text-base">
-                        {w.albanian}
-                      </p>
+                      <p className="font-black text-amber-800">{w.albanian}</p>
                       <p className="text-amber-600 text-sm mt-1">
                         {w.translated}
                       </p>
@@ -175,13 +166,12 @@ export default function StoryPage() {
               </div>
             )}
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pb-8">
               <button
-                onClick={() => navigate(`/quiz/${lessonId}?childId=${childId}`)}
-                className="flex-1 py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700 transition-all"
+                onClick={() => navigate("/dashboard")}
+                className="flex-1 py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700"
               >
-                Bëj kuizin →
+                Kthehu →
               </button>
               <button
                 onClick={() => {

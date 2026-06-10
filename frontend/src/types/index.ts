@@ -1,10 +1,3 @@
-export interface User {
-  userId: string;
-  username: string;
-  email: string;
-  role: string;
-}
-
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -12,14 +5,15 @@ export interface AuthResponse {
   role: string;
 }
 
-export interface ChildProfile {
-  id: string;
-  displayName: string;
-  avatarCode: string;
+export interface UserProfile {
+  username: string;
+  email: string;
+  role: string;
   nativeLanguage: string;
   currentLevel: string;
   totalPoints: number;
   currentStreak: number;
+  onboardingCompleted: boolean;
 }
 
 export interface Lesson {
@@ -48,7 +42,8 @@ export interface LessonDetail extends Lesson {
 }
 
 export interface ProgressSummary {
-  displayName: string;
+  username: string;
+  nativeLanguage: string;
   currentLevel: string;
   totalPoints: number;
   currentStreak: number;

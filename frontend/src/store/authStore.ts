@@ -4,12 +4,13 @@ import { persist } from "zustand/middleware";
 interface AuthState {
   accessToken: string | null;
   username: string | null;
+  role: string | null;
+  nativeLanguage: string;
+  onboardingCompleted: boolean;
   isAuthenticated: boolean;
-  selectedChildId: string | null;
-  selectedChildLanguage: string;
-  setAuth: (token: string, username: string) => void;
+  setAuth: (token: string, username: string, role: string) => void;
+  setOnboarding: (language: string, completed: boolean) => void;
   clearAuth: () => void;
-  setSelectedChild: (id: string, language: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -17,20 +18,23 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       accessToken: null,
       username: null,
+      role: null,
+      nativeLanguage: "en",
+      onboardingCompleted: false,
       isAuthenticated: false,
-      selectedChildId: null,
-      selectedChildLanguage: "en",
-      setAuth: (token, username) =>
-        set({ accessToken: token, username, isAuthenticated: true }),
+      setAuth: (token, username, role) =>
+        set({ accessToken: token, username, role, isAuthenticated: true }),
+      setOnboarding: (language, completed) =>
+        set({ nativeLanguage: language, onboardingCompleted: completed }),
       clearAuth: () =>
         set({
           accessToken: null,
           username: null,
+          role: null,
           isAuthenticated: false,
-          selectedChildId: null,
+          onboardingCompleted: false,
+          nativeLanguage: "en",
         }),
-      setSelectedChild: (id, language) =>
-        set({ selectedChildId: id, selectedChildLanguage: language }),
     }),
     { name: "auth-storage" },
   ),

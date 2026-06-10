@@ -20,6 +20,14 @@ export const login = async (data: {
   return res.data;
 };
 
+export const completeOnboarding = async (data: {
+  nativeLanguage: string;
+  level: number;
+}) => {
+  const res = await apiClient.post("/api/v1/auth/onboarding", data);
+  return res.data;
+};
+
 export const logout = () => {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");

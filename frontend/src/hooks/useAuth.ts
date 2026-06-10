@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { login, register, logout } from "../api/auth";
+import { login, register, logout, completeOnboarding } from "../api/auth";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
 
@@ -11,7 +11,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: login,
     onSuccess: (data) => {
-      setAuth(data.accessToken, data.username);
+      setAuth(data.accessToken, data.username, data.role);
       toast.success("Mirë se erdhe!");
       if (data.role === "Admin") navigate("/admin");
       else navigate("/dashboard");
@@ -30,6 +30,21 @@ export function useRegister() {
       navigate("/login");
     },
     onError: () => toast.error("Regjistrimi dështoi. Provo sërish."),
+  });
+}
+
+export function useCompleteOnboarding() {
+  const setOnboarding = useAuthStore((s) => s.setOnboarding);
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: completeOnboarding,
+    onSuccess: (_, variables) => {
+      setOnboarding(variables.nativeLanguage, true);
+      toast.success("Mirë se vjen! Fillojmë mësimet.");
+      navigate("/dashboard");
+    },
+    onError: () => toast.error("Gabim. Provo sërish."),
   });
 }
 

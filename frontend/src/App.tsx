@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
+import OnboardingPage from "./pages/Onboarding/OnboardingPage";
 import DashboardPage from "./pages/Dashboard/DashboardPage";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import FlashcardPage from "./pages/Lesson/FlashcardPage";
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route
             path="/dashboard"
             element={

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getLessonById } from "../../api/lessons";
 import { updateProgress } from "../../api/progress";
@@ -8,14 +8,11 @@ import toast from "react-hot-toast";
 
 export default function FlashcardPage() {
   const { lessonId } = useParams<{ lessonId: string }>();
-  const [searchParams] = useSearchParams();
-  const childId = searchParams.get("childId") ?? "";
   const navigate = useNavigate();
 
   const [cardIndex, setCardIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [known, setKnown] = useState<string[]>([]);
-  const [unknown, setUnknown] = useState<string[]>([]);
   const [recording, setRecording] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
@@ -40,26 +37,18 @@ export default function FlashcardPage() {
 
   const words = lesson?.vocabularyItems ?? [];
   const current: VocabularyItem | undefined = words[cardIndex];
-  const progress = Math.round((cardIndex / words.length) * 100);
-
-  const handleFlip = () => setFlipped(!flipped);
+  const progress = Math.round((cardIndex / Math.max(words.length, 1)) * 100);
 
   const handleNext = (knew: boolean) => {
     if (!current) return;
     if (knew) setKnown((prev) => [...prev, current.id]);
-    else setUnknown((prev) => [...prev, current.id]);
     setFlipped(false);
     setScore(null);
 
     if (cardIndex + 1 >= words.length) {
-      const scorePercent = Math.round(
-        ((known.length + (knew ? 1 : 0)) / words.length) * 100,
-      );
-      progressMutation.mutate({
-        childProfileId: childId,
-        lessonId: lessonId!,
-        scorePercent,
-      });
+      const knownCount = known.length + (knew ? 1 : 0);
+      const scorePercent = Math.round((knownCount / words.length) * 100);
+      progressMutation.mutate({ lessonId: lessonId!, scorePercent });
       setFinished(true);
     } else {
       setCardIndex((prev) => prev + 1);
@@ -84,26 +73,19 @@ export default function FlashcardPage() {
             {pct >= 80 ? "🎉" : pct >= 60 ? "👍" : "💪"}
           </p>
           <h2 className="text-3xl font-black text-gray-800 mb-2">{pct}%</h2>
-          <p className="text-gray-500 mb-2">
+          <p className="text-gray-500 mb-8">
             {known.length} nga {words.length} fjalë të njohura
-          </p>
-          <p className="font-bold text-lg mb-8 text-gray-700">
-            {pct >= 80
-              ? "Fantastike! Vazhdo kështu!"
-              : pct >= 60
-                ? "Mirë! Pak më shumë praktikë!"
-                : "Mos u dorëzo, provo sërish!"}
           </p>
           <div className="flex gap-3">
             <button
-              onClick={() => navigate(`/quiz/${lessonId}?childId=${childId}`)}
-              className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all"
+              onClick={() => navigate(`/quiz/${lessonId}`)}
+              className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700"
             >
               Bëj kuizin →
             </button>
             <button
               onClick={() => navigate("/dashboard")}
-              className="flex-1 py-3 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-all"
+              className="flex-1 py-3 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50"
             >
               Kthehu
             </button>
@@ -115,11 +97,10 @@ export default function FlashcardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
         <button
           onClick={() => navigate("/dashboard")}
-          className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold hover:bg-gray-200"
+          className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600"
         >
           ‹
         </button>
@@ -133,7 +114,6 @@ export default function FlashcardPage() {
         </span>
       </div>
 
-      {/* Progress bar */}
       <div className="h-2 bg-gray-100">
         <div
           className="h-2 bg-red-500 transition-all duration-500"
@@ -145,9 +125,8 @@ export default function FlashcardPage() {
       </p>
 
       <div className="max-w-md mx-auto px-4 py-4">
-        {/* Flashcard */}
         <div
-          onClick={handleFlip}
+          onClick={() => setFlipped(!flipped)}
           className="cursor-pointer mb-5"
           style={{ perspective: "1000px" }}
         >
@@ -160,7 +139,6 @@ export default function FlashcardPage() {
               height: "220px",
             }}
           >
-            {/* Front */}
             <div
               style={{
                 backfaceVisibility: "hidden",
@@ -181,8 +159,6 @@ export default function FlashcardPage() {
               )}
               <p className="text-xs text-gray-300 mt-2">Kliko për të kthyer</p>
             </div>
-
-            {/* Back */}
             <div
               style={{
                 backfaceVisibility: "hidden",
@@ -192,7 +168,7 @@ export default function FlashcardPage() {
               className="absolute inset-0 bg-white rounded-3xl border-2 border-teal-100 flex flex-col items-center justify-center gap-3 p-6"
             >
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                🇬🇧 English
+                🌍 Përkthim
               </span>
               <p className="text-4xl font-black text-gray-900">
                 {current?.wordEnglish}
@@ -206,14 +182,13 @@ export default function FlashcardPage() {
           </div>
         </div>
 
-        {/* Mic button */}
         <div className="flex flex-col items-center gap-2 mb-5">
           <button
             onPointerDown={handleMic}
             className={`flex items-center gap-2 px-5 py-2 rounded-full border font-bold text-sm transition-all ${
               recording
-                ? "bg-red-50 border-red-400 text-red-600 scale-105"
-                : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
+                ? "bg-red-50 border-red-400 text-red-600"
+                : "bg-white border-gray-200 text-gray-600"
             }`}
           >
             🎤 {recording ? "Duke dëgjuar..." : "Shqiptoje"}
@@ -226,13 +201,11 @@ export default function FlashcardPage() {
                   : "bg-amber-100 text-amber-700"
               }`}
             >
-              {score >= 80 ? "✓" : "↻"} {score}% saktësi —{" "}
-              {score >= 80 ? "Shumë mirë!" : "Provo sërish!"}
+              {score >= 80 ? "✓" : "↻"} {score}% saktësi
             </span>
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3">
           <button
             onClick={() => handleNext(false)}
@@ -248,7 +221,6 @@ export default function FlashcardPage() {
           </button>
         </div>
 
-        {/* Learned words */}
         {known.length > 0 && (
           <div className="mt-5 bg-blue-50 rounded-2xl p-4">
             <p className="text-xs font-black text-blue-700 uppercase tracking-wide mb-2">

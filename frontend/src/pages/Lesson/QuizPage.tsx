@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getLessonById } from "../../api/lessons";
 import { updateProgress } from "../../api/progress";
@@ -10,25 +10,21 @@ interface Question {
   options: string[];
 }
 
-function buildQuestions(words: any[], nativeLanguage: string): Question[] {
+function buildQuestions(words: any[]): Question[] {
   return words.slice(0, 5).map((word, i) => {
-    const correctWord =
-      nativeLanguage === "en" ? word.wordEnglish : word.wordEnglish;
-
     const wrongWords = words
       .filter((_, idx) => idx !== i)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
       .map((w) => w.wordEnglish);
 
-    const shuffled = [...wrongWords, correctWord].sort(
+    const shuffled = [...wrongWords, word.wordEnglish].sort(
       () => Math.random() - 0.5,
     );
-    const correctIndex = shuffled.indexOf(correctWord);
 
     return {
       question: `Çfarë do të thotë "${word.wordAlbanian}"?`,
-      correct: correctIndex,
+      correct: shuffled.indexOf(word.wordEnglish),
       options: shuffled,
     };
   });
@@ -36,8 +32,6 @@ function buildQuestions(words: any[], nativeLanguage: string): Question[] {
 
 export default function QuizPage() {
   const { lessonId } = useParams<{ lessonId: string }>();
-  const [searchParams] = useSearchParams();
-  const childId = searchParams.get("childId") ?? "";
   const navigate = useNavigate();
 
   const [qIndex, setQIndex] = useState(0);
@@ -54,7 +48,7 @@ export default function QuizPage() {
 
   const questions = useMemo(() => {
     if (!lesson?.vocabularyItems?.length) return [];
-    return buildQuestions(lesson.vocabularyItems, "en");
+    return buildQuestions(lesson.vocabularyItems);
   }, [lesson]);
 
   if (isLoading)
@@ -64,15 +58,10 @@ export default function QuizPage() {
       </div>
     );
 
-  if (!questions.length)
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 font-bold">Nuk ka fjalë për kuiz.</p>
-      </div>
-    );
-
   const current = questions[qIndex];
-  const progressPct = Math.round((qIndex / questions.length) * 100);
+  const progressPct = Math.round(
+    (qIndex / Math.max(questions.length, 1)) * 100,
+  );
 
   const handleAnswer = (idx: number) => {
     if (answered) return;
@@ -82,15 +71,10 @@ export default function QuizPage() {
   };
 
   const handleNext = () => {
-    const isLast = qIndex + 1 >= questions.length;
-    if (isLast) {
+    if (qIndex + 1 >= questions.length) {
       const finalCorrect = correct + (chosen === current.correct ? 1 : 0);
       const scorePercent = Math.round((finalCorrect / questions.length) * 100);
-      updateProgress({
-        childProfileId: childId,
-        lessonId: lessonId!,
-        scorePercent,
-      });
+      updateProgress({ lessonId: lessonId!, scorePercent });
       setFinished(true);
     } else {
       setQIndex((prev) => prev + 1);
@@ -99,16 +83,8 @@ export default function QuizPage() {
     }
   };
 
-  const handleRestart = () => {
-    setFinished(false);
-    setQIndex(0);
-    setCorrect(0);
-    setChosen(null);
-    setAnswered(false);
-  };
-
   if (finished) {
-    const finalCorrect = correct;
+    const finalCorrect = correct + (chosen === current?.correct ? 1 : 0);
     const pct = Math.round((finalCorrect / questions.length) * 100);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -117,20 +93,19 @@ export default function QuizPage() {
             {pct >= 80 ? "🎉" : pct >= 60 ? "👍" : "💪"}
           </p>
           <h2 className="text-4xl font-black text-red-600 mb-1">{pct}%</h2>
-          <p className="text-gray-500 mb-1">
+          <p className="text-gray-500 mb-8">
             {finalCorrect} / {questions.length} saktë
-          </p>
-          <p className="font-bold text-lg text-gray-700 mb-8">
-            {pct >= 80
-              ? "Fantastike! Bravo!"
-              : pct >= 60
-                ? "Mirë, vazhdo!"
-                : "Mos u dorëzo!"}
           </p>
           <div className="flex gap-3">
             <button
-              onClick={handleRestart}
-              className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50"
+              onClick={() => {
+                setFinished(false);
+                setQIndex(0);
+                setCorrect(0);
+                setChosen(null);
+                setAnswered(false);
+              }}
+              className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl"
             >
               Provo sërish
             </button>
@@ -177,13 +152,13 @@ export default function QuizPage() {
           <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-3">
             Pyetja {qIndex + 1}
           </p>
-          <p className="text-xl font-black text-gray-800 leading-snug">
-            {current.question}
+          <p className="text-xl font-black text-gray-800">
+            {current?.question}
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
-          {current.options.map((opt, idx) => {
+          {current?.options.map((opt, idx) => {
             let style =
               "bg-white border-2 border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50";
             if (answered) {
@@ -206,26 +181,27 @@ export default function QuizPage() {
         </div>
 
         {answered && (
-          <div
-            className={`rounded-2xl p-4 mb-4 text-center font-bold ${
-              chosen === current.correct
-                ? "bg-teal-50 text-teal-700"
-                : "bg-red-50 text-red-700"
-            }`}
-          >
-            {chosen === current.correct
-              ? "🎉 Saktë! Bravo!"
-              : `❌ Gabim! Përgjigja: "${current.options[current.correct]}"`}
-          </div>
-        )}
-
-        {answered && (
-          <button
-            onClick={handleNext}
-            className="w-full py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700 transition-all"
-          >
-            {qIndex + 1 >= questions.length ? "Shiko rezultatin →" : "Vazhdo →"}
-          </button>
+          <>
+            <div
+              className={`rounded-2xl p-4 mb-4 text-center font-bold ${
+                chosen === current.correct
+                  ? "bg-teal-50 text-teal-700"
+                  : "bg-red-50 text-red-700"
+              }`}
+            >
+              {chosen === current.correct
+                ? "🎉 Saktë! Bravo!"
+                : `❌ Gabim! Përgjigja: "${current.options[current.correct]}"`}
+            </div>
+            <button
+              onClick={handleNext}
+              className="w-full py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700"
+            >
+              {qIndex + 1 >= questions.length
+                ? "Shiko rezultatin →"
+                : "Vazhdo →"}
+            </button>
+          </>
         )}
       </div>
     </div>
