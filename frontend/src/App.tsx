@@ -9,16 +9,21 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import FlashcardPage from "./pages/Lesson/FlashcardPage";
 import QuizPage from "./pages/Lesson/QuizPage";
 import StoryPage from "./pages/Story/StoryPage";
+import ProfilePage from "./pages/Profile/ProfilePage";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import AdminRoute from "./components/Layout/AdminRoute";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, staleTime: 30000 },
+  },
+});
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Toaster position="top-right" />
+        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
@@ -29,6 +34,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             }
           />

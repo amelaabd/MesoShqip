@@ -3,11 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getLessonById } from "../../api/lessons";
 import { updateProgress } from "../../api/progress";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface Question {
   question: string;
   correct: number;
   options: string[];
+  explanation: string;
 }
 
 function buildQuestions(words: any[]): Question[] {
@@ -23,9 +25,10 @@ function buildQuestions(words: any[]): Question[] {
     );
 
     return {
-      question: `Çfarë do të thotë "${word.wordAlbanian}"?`,
+      question: `"${word.wordAlbanian}" = ?`,
       correct: shuffled.indexOf(word.wordEnglish),
       options: shuffled,
+      explanation: word.exampleSentence ?? "",
     };
   });
 }
@@ -33,6 +36,7 @@ function buildQuestions(words: any[]): Question[] {
 export default function QuizPage() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [qIndex, setQIndex] = useState(0);
   const [chosen, setChosen] = useState<number | null>(null);
@@ -53,7 +57,7 @@ export default function QuizPage() {
 
   if (isLoading)
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-gray-400 font-bold">Duke ngarkuar...</p>
       </div>
     );
@@ -73,8 +77,10 @@ export default function QuizPage() {
   const handleNext = () => {
     if (qIndex + 1 >= questions.length) {
       const finalCorrect = correct + (chosen === current.correct ? 1 : 0);
-      const scorePercent = Math.round((finalCorrect / questions.length) * 100);
-      updateProgress({ lessonId: lessonId!, scorePercent });
+      updateProgress({
+        lessonId: lessonId!,
+        scorePercent: Math.round((finalCorrect / questions.length) * 100),
+      });
       setFinished(true);
     } else {
       setQIndex((prev) => prev + 1);
@@ -86,16 +92,19 @@ export default function QuizPage() {
   if (finished) {
     const finalCorrect = correct + (chosen === current?.correct ? 1 : 0);
     const pct = Math.round((finalCorrect / questions.length) * 100);
+    const msg =
+      pct >= 80 ? t("fantastic") : pct >= 60 ? t("good") : t("keepTrying");
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl border border-gray-100 p-10 w-full max-w-md text-center">
+        <div className="bg-white rounded-3xl border border-gray-100 p-8 md:p-10 w-full max-w-md text-center">
           <p className="text-6xl mb-4">
             {pct >= 80 ? "🎉" : pct >= 60 ? "👍" : "💪"}
           </p>
           <h2 className="text-4xl font-black text-red-600 mb-1">{pct}%</h2>
-          <p className="text-gray-500 mb-8">
-            {finalCorrect} / {questions.length} saktë
+          <p className="text-gray-500 mb-2">
+            {finalCorrect} / {questions.length} {t("correct")}
           </p>
+          <p className="font-bold text-gray-700 mb-8">{msg}</p>
           <div className="flex gap-3">
             <button
               onClick={() => {
@@ -105,15 +114,15 @@ export default function QuizPage() {
                 setChosen(null);
                 setAnswered(false);
               }}
-              className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl"
+              className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl text-sm"
             >
-              Provo sërish
+              {t("tryAgain")}
             </button>
             <button
               onClick={() => navigate("/dashboard")}
-              className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700"
+              className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 text-sm"
             >
-              Kthehu
+              {t("goBack")}
             </button>
           </div>
         </div>
@@ -130,12 +139,12 @@ export default function QuizPage() {
         >
           ‹
         </button>
-        <div className="flex-1">
-          <p className="font-black text-gray-800 text-sm">
-            Kuiz — {lesson?.titleAlbanian}
+        <div className="flex-1 min-w-0">
+          <p className="font-black text-gray-800 text-sm truncate">
+            {t("quiz")} — {lesson?.titleAlbanian}
           </p>
         </div>
-        <span className="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
+        <span className="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-1 rounded-full flex-shrink-0">
           {qIndex + 1} / {questions.length}
         </span>
       </div>
@@ -147,17 +156,17 @@ export default function QuizPage() {
         />
       </div>
 
-      <div className="max-w-md mx-auto px-4 py-8">
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 mb-6">
-          <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-3">
-            Pyetja {qIndex + 1}
+      <div className="max-w-md mx-auto px-4 py-6">
+        <div className="bg-white rounded-3xl border border-gray-100 p-5 md:p-6 mb-5">
+          <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-2">
+            {t("question")} {qIndex + 1}
           </p>
-          <p className="text-xl font-black text-gray-800">
+          <p className="text-lg md:text-xl font-black text-gray-800">
             {current?.question}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-5">
           {current?.options.map((opt, idx) => {
             let style =
               "bg-white border-2 border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50";
@@ -172,7 +181,7 @@ export default function QuizPage() {
               <button
                 key={idx}
                 onClick={() => handleAnswer(idx)}
-                className={`py-4 px-3 rounded-2xl font-bold text-sm text-center transition-all ${style}`}
+                className={`py-3 md:py-4 px-3 rounded-2xl font-bold text-sm text-center transition-all ${style}`}
               >
                 {opt}
               </button>
@@ -183,23 +192,26 @@ export default function QuizPage() {
         {answered && (
           <>
             <div
-              className={`rounded-2xl p-4 mb-4 text-center font-bold ${
+              className={`rounded-2xl p-4 mb-4 font-bold text-sm ${
                 chosen === current.correct
                   ? "bg-teal-50 text-teal-700"
                   : "bg-red-50 text-red-700"
               }`}
             >
               {chosen === current.correct
-                ? "🎉 Saktë! Bravo!"
-                : `❌ Gabim! Përgjigja: "${current.options[current.correct]}"`}
+                ? t("correctAnswer")
+                : `${t("wrongAnswer")} "${current.options[current.correct]}"`}
+              {current.explanation && (
+                <p className="text-xs mt-1 opacity-75 font-normal">
+                  {current.explanation}
+                </p>
+              )}
             </div>
             <button
               onClick={handleNext}
               className="w-full py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700"
             >
-              {qIndex + 1 >= questions.length
-                ? "Shiko rezultatin →"
-                : "Vazhdo →"}
+              {qIndex + 1 >= questions.length ? t("seeResult") : t("next")}
             </button>
           </>
         )}

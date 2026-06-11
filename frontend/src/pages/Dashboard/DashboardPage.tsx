@@ -4,9 +4,21 @@ import { getLessons } from "../../api/lessons";
 import { getProgressSummary } from "../../api/progress";
 import { useAuthStore } from "../../store/authStore";
 import { useLogout } from "../../hooks/useAuth";
+import { useTranslation } from "../../hooks/useTranslation";
+import type { Lesson } from "../../types";
+
+const langFlags: Record<string, string> = {
+  en: "🇬🇧",
+  de: "🇩🇪",
+  it: "🇮🇹",
+  fr: "🇫🇷",
+  sv: "🇸🇪",
+  tr: "🇹🇷",
+};
 
 export default function DashboardPage() {
   const { username, nativeLanguage } = useAuthStore();
+  const { t } = useTranslation();
   const logout = useLogout();
   const navigate = useNavigate();
 
@@ -15,51 +27,59 @@ export default function DashboardPage() {
     queryFn: getProgressSummary,
   });
 
-  const { data: lessons } = useQuery({
+  // Fix: Provide a default level parameter or get it from user's progress
+  const { data: lessons, isLoading: lessonsLoading } = useQuery({
     queryKey: ["lessons"],
-    queryFn: () => getLessons(),
+    queryFn: () => getLessons("beginner"), // Provide a level parameter
   });
 
-  const langFlags: Record<string, string> = {
-    en: "🇬🇧",
-    de: "🇩🇪",
-    it: "🇮🇹",
-    fr: "🇫🇷",
-    sv: "🇸🇪",
-    tr: "🇹🇷",
-  };
+  if (lessonsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="text-4xl mb-3 animate-pulse">🦅</div>
+          <p className="text-gray-400 font-bold text-sm">Duke ngarkuar...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="text-2xl font-black text-red-600">
+      <nav className="bg-white border-b border-gray-100 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <h1 className="text-xl md:text-2xl font-black text-red-600">
           Mëso<span className="text-teal-500">Shqip</span>
         </h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold text-gray-600">
-            👋 {username}
-          </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/profile")}
+            className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center font-black text-red-600 text-sm hover:bg-red-200 transition-all"
+          >
+            {username?.[0]?.toUpperCase() ?? "U"}
+          </button>
           <button
             onClick={logout}
-            className="text-sm font-bold text-red-500 hover:text-red-700"
+            className="text-sm font-bold text-gray-400 hover:text-red-500"
           >
-            Çkyçu
+            {t("logout")}
           </button>
         </div>
       </nav>
 
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Hero */}
-        <div className="bg-red-600 rounded-3xl p-6 text-white mb-6 relative overflow-hidden">
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 text-6xl opacity-20">
+        <div className="bg-red-600 rounded-3xl p-5 md:p-6 text-white mb-5 relative overflow-hidden">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-5xl md:text-6xl opacity-20">
             🦅
           </div>
-          <p className="text-sm opacity-80 mb-1">Mirë se erdhe,</p>
-          <h2 className="text-3xl font-black mb-3">{username}! 👋</h2>
-          <div className="flex items-center gap-2">
+          <p className="text-sm opacity-80 mb-1">{t("welcomeBack")}</p>
+          <h2 className="text-2xl md:text-3xl font-black mb-3">
+            {username}! 👋
+          </h2>
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-bold">
-              {langFlags[nativeLanguage] ?? "🌍"} {nativeLanguage.toUpperCase()}
+              {langFlags[nativeLanguage] ?? "🌍"}{" "}
+              {nativeLanguage?.toUpperCase() ?? "EN"}
             </span>
             <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-bold">
               📚 {progress?.currentLevel ?? "Fillestor"}
@@ -69,22 +89,22 @@ export default function DashboardPage() {
 
         {/* Stats */}
         {progress && (
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-3 gap-3 mb-5">
             {[
               {
-                label: "Pikë",
+                label: t("points"),
                 value: progress.totalPoints,
                 icon: "⭐",
                 color: "text-amber-600",
               },
               {
-                label: "Streak",
+                label: t("streak"),
                 value: progress.currentStreak,
                 icon: "🔥",
                 color: "text-red-500",
               },
               {
-                label: "Mësimet",
+                label: t("completedLessons"),
                 value: `${progress.completedLessons}/${progress.totalLessons}`,
                 icon: "✅",
                 color: "text-teal-600",
@@ -92,13 +112,13 @@ export default function DashboardPage() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="bg-white rounded-2xl border border-gray-100 p-4 text-center"
+                className="bg-white rounded-2xl border border-gray-100 p-3 md:p-4 text-center"
               >
-                <p className="text-2xl mb-1">{stat.icon}</p>
-                <p className={`text-xl font-black ${stat.color}`}>
+                <p className="text-xl md:text-2xl mb-1">{stat.icon}</p>
+                <p className={`text-lg md:text-xl font-black ${stat.color}`}>
                   {stat.value}
                 </p>
-                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-1">
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-1 hidden md:block">
                   {stat.label}
                 </p>
               </div>
@@ -106,50 +126,56 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Historia */}
+        {/* Story button */}
         <button
           onClick={() => navigate("/story")}
-          className="w-full py-4 bg-teal-500 text-white font-black rounded-2xl hover:bg-teal-600 transition-all flex items-center justify-center gap-2 mb-6"
+          className="w-full py-4 bg-teal-500 text-white font-black rounded-2xl hover:bg-teal-600 transition-all flex items-center justify-center gap-2 mb-5 text-sm md:text-base"
         >
-          ✨ Gjenero historinë e sotme
+          {t("todayStory")}
         </button>
 
         {/* Lessons */}
-        <div>
-          <h3 className="text-lg font-black text-gray-800 mb-4">Mësimet</h3>
-          <div className="grid gap-3">
-            {lessons?.map((lesson) => (
-              <button
+        <h3 className="text-base md:text-lg font-black text-gray-800 mb-3">
+          {t("lessons")}
+        </h3>
+        <div className="grid gap-3">
+          {lessons && lessons.length > 0 ? (
+            lessons.map((lesson: Lesson) => (
+              <div
                 key={lesson.id}
+                className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-md transition-all cursor-pointer"
                 onClick={() => navigate(`/lesson/${lesson.id}`)}
-                className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-4 hover:shadow-md transition-all text-left"
               >
-                <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-xl flex-shrink-0">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-red-50 flex items-center justify-center text-lg md:text-xl flex-shrink-0">
                   {lesson.lessonType === "Vocabulary" ? "📚" : "🧠"}
                 </div>
-                <div className="flex-1">
-                  <p className="font-black text-gray-800">
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-gray-800 text-sm md:text-base truncate">
                     {lesson.titleAlbanian}
                   </p>
-                  <p className="text-sm text-gray-400">
-                    {lesson.level} · {lesson.vocabularyCount} fjalë
+                  <p className="text-xs md:text-sm text-gray-400">
+                    {lesson.level} · {lesson.vocabularyCount} {t("words")}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div
+                  className="flex items-center gap-2 flex-shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/quiz/${lesson.id}`);
-                    }}
-                    className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full hover:bg-purple-200"
+                    onClick={() => navigate(`/quiz/${lesson.id}`)}
+                    className="px-2 md:px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full hover:bg-purple-200"
                   >
-                    Quiz
+                    {t("quiz")}
                   </button>
-                  <span className="text-gray-400 text-xl">›</span>
+                  <span className="text-gray-400 text-lg">›</span>
                 </div>
-              </button>
-            ))}
-          </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              <p className="text-sm">No lessons available</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
