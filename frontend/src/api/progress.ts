@@ -13,3 +13,13 @@ export const updateProgress = async (data: {
   const res = await apiClient.post("/api/v1/progress/update", data);
   return res.data;
 };
+
+export const getBadges = async () => {
+  const res = await apiClient.get("/api/v1/progress/badges");
+  return res.data;
+};
+
+export const awardBadges = async () => {
+  const res = await apiClient.post("/api/v1/progress/award-badges");
+  return res.data;
+};

@@ -1,5 +1,4 @@
 using MediatR;
-using MesoShqip.Application.Common.Exceptions;
 using MesoShqip.Application.Common.Models;
 using MesoShqip.Domain.Entities;
 using MesoShqip.Domain.Interfaces;
@@ -22,6 +21,11 @@ public record VocabularyDto(
     Guid Id,
     string WordAlbanian,
     string WordEnglish,
+    string WordGerman,
+    string WordItalian,
+    string WordFrench,
+    string WordSwedish,
+    string WordTurkish,
     string? Phonetic,
     string? ExampleSentence,
     string? AudioFileUrl,
@@ -42,7 +46,8 @@ public class GetLessonByIdHandler : IRequestHandler<GetLessonByIdQuery, Result<L
         _vocabRepo = vocabRepo;
     }
 
-    public async Task<Result<LessonDetailDto>> Handle(GetLessonByIdQuery request, CancellationToken ct)
+    public async Task<Result<LessonDetailDto>> Handle(
+        GetLessonByIdQuery request, CancellationToken ct)
     {
         var lesson = await _lessonRepo.GetByIdAsync(request.LessonId, ct);
         if (lesson is null)
@@ -54,6 +59,11 @@ public class GetLessonByIdHandler : IRequestHandler<GetLessonByIdQuery, Result<L
             v.Id,
             v.WordAlbanian,
             v.WordEnglish,
+            v.WordGerman,
+            v.WordItalian,
+            v.WordFrench,
+            v.WordSwedish,
+            v.WordTurkish,
             v.Phonetic,
             v.ExampleSentence,
             v.AudioFileUrl,

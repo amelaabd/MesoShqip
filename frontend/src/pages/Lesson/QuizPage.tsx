@@ -2,8 +2,10 @@ import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getLessonById } from "../../api/lessons";
-import { updateProgress } from "../../api/progress";
+import { updateProgress, awardBadges } from "../../api/progress";
 import { useTranslation } from "../../hooks/useTranslation";
+import { getWordInLang } from "../../utils/wordByLang";
+import type { SupportedLanguage } from "../../i18n/translations";
 
 interface Question {
   question: string;
@@ -12,21 +14,23 @@ interface Question {
   explanation: string;
 }
 
-function buildQuestions(words: any[]): Question[] {
+function buildQuestions(words: any[], lang: SupportedLanguage): Question[] {
   return words.slice(0, 5).map((word, i) => {
+    const correctWord = getWordInLang(word, lang);
+
     const wrongWords = words
       .filter((_, idx) => idx !== i)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
-      .map((w) => w.wordEnglish);
+      .map((w) => getWordInLang(w, lang));
 
-    const shuffled = [...wrongWords, word.wordEnglish].sort(
+    const shuffled = [...wrongWords, correctWord].sort(
       () => Math.random() - 0.5,
     );
 
     return {
       question: `"${word.wordAlbanian}" = ?`,
-      correct: shuffled.indexOf(word.wordEnglish),
+      correct: shuffled.indexOf(correctWord),
       options: shuffled,
       explanation: word.exampleSentence ?? "",
     };
@@ -36,7 +40,7 @@ function buildQuestions(words: any[]): Question[] {
 export default function QuizPage() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   const [qIndex, setQIndex] = useState(0);
   const [chosen, setChosen] = useState<number | null>(null);
@@ -52,13 +56,20 @@ export default function QuizPage() {
 
   const questions = useMemo(() => {
     if (!lesson?.vocabularyItems?.length) return [];
-    return buildQuestions(lesson.vocabularyItems);
-  }, [lesson]);
+    return buildQuestions(lesson.vocabularyItems, lang as SupportedLanguage);
+  }, [lesson, lang]);
 
   if (isLoading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-400 font-bold">Duke ngarkuar...</p>
+        <p className="text-gray-400 font-bold">{t("loading")}</p>
+      </div>
+    );
+
+  if (!questions.length)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-400 font-bold">{t("noLessons")}</p>
       </div>
     );
 
@@ -74,13 +85,12 @@ export default function QuizPage() {
     if (idx === current.correct) setCorrect((prev) => prev + 1);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (qIndex + 1 >= questions.length) {
       const finalCorrect = correct + (chosen === current.correct ? 1 : 0);
-      updateProgress({
-        lessonId: lessonId!,
-        scorePercent: Math.round((finalCorrect / questions.length) * 100),
-      });
+      const scorePercent = Math.round((finalCorrect / questions.length) * 100);
+      await updateProgress({ lessonId: lessonId!, scorePercent });
+      await awardBadges();
       setFinished(true);
     } else {
       setQIndex((prev) => prev + 1);
@@ -92,8 +102,6 @@ export default function QuizPage() {
   if (finished) {
     const finalCorrect = correct + (chosen === current?.correct ? 1 : 0);
     const pct = Math.round((finalCorrect / questions.length) * 100);
-    const msg =
-      pct >= 80 ? t("fantastic") : pct >= 60 ? t("good") : t("keepTrying");
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl border border-gray-100 p-8 md:p-10 w-full max-w-md text-center">
@@ -104,7 +112,13 @@ export default function QuizPage() {
           <p className="text-gray-500 mb-2">
             {finalCorrect} / {questions.length} {t("correct")}
           </p>
-          <p className="font-bold text-gray-700 mb-8">{msg}</p>
+          <p className="font-bold text-gray-700 mb-8">
+            {pct >= 80
+              ? t("fantastic")
+              : pct >= 60
+                ? t("good")
+                : t("keepTrying")}
+          </p>
           <div className="flex gap-3">
             <button
               onClick={() => {
@@ -132,6 +146,7 @@ export default function QuizPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
         <button
           onClick={() => navigate("/dashboard")}
@@ -149,6 +164,7 @@ export default function QuizPage() {
         </span>
       </div>
 
+      {/* Progress */}
       <div className="h-2 bg-gray-100">
         <div
           className="h-2 bg-red-500 transition-all duration-500"
@@ -157,6 +173,7 @@ export default function QuizPage() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6">
+        {/* Question */}
         <div className="bg-white rounded-3xl border border-gray-100 p-5 md:p-6 mb-5">
           <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-2">
             {t("question")} {qIndex + 1}
@@ -166,6 +183,7 @@ export default function QuizPage() {
           </p>
         </div>
 
+        {/* Options */}
         <div className="grid grid-cols-2 gap-3 mb-5">
           {current?.options.map((opt, idx) => {
             let style =
@@ -181,7 +199,7 @@ export default function QuizPage() {
               <button
                 key={idx}
                 onClick={() => handleAnswer(idx)}
-                className={`py-3 md:py-4 px-3 rounded-2xl font-bold text-sm text-center transition-all ${style}`}
+                className={`py-3 md:py-4 px-3 rounded-2xl font-bold text-sm text-center transition-all active:scale-95 ${style}`}
               >
                 {opt}
               </button>
@@ -189,6 +207,7 @@ export default function QuizPage() {
           })}
         </div>
 
+        {/* Feedback */}
         {answered && (
           <>
             <div
@@ -209,7 +228,7 @@ export default function QuizPage() {
             </div>
             <button
               onClick={handleNext}
-              className="w-full py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700"
+              className="w-full py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700 transition-all active:scale-[0.98]"
             >
               {qIndex + 1 >= questions.length ? t("seeResult") : t("next")}
             </button>

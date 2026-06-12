@@ -4,8 +4,19 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { getLessonById } from "../../api/lessons";
 import { updateProgress } from "../../api/progress";
 import { useTranslation } from "../../hooks/useTranslation";
+import { getWordInLang } from "../../utils/wordByLang";
+import type { SupportedLanguage } from "../../i18n/translations";
 import type { VocabularyItem } from "../../types";
 import toast from "react-hot-toast";
+
+const langLabel: Record<string, string> = {
+  en: "🇬🇧 English",
+  de: "🇩🇪 Deutsch",
+  it: "🇮🇹 Italiano",
+  fr: "🇫🇷 Français",
+  sv: "🇸🇪 Svenska",
+  tr: "🇹🇷 Türkçe",
+};
 
 export default function FlashcardPage() {
   const { lessonId } = useParams<{ lessonId: string }>();
@@ -27,7 +38,7 @@ export default function FlashcardPage() {
 
   const progressMutation = useMutation({
     mutationFn: updateProgress,
-    onSuccess: () => toast.success("✓ " + t("learned")),
+    onSuccess: () => toast.success("✓"),
   });
 
   if (isLoading)
@@ -35,7 +46,7 @@ export default function FlashcardPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-4xl mb-3 animate-pulse">🦅</div>
-          <p className="text-gray-400 font-bold text-sm">Duke ngarkuar...</p>
+          <p className="text-gray-400 font-bold text-sm">{t("loading")}</p>
         </div>
       </div>
     );
@@ -44,20 +55,12 @@ export default function FlashcardPage() {
   const current: VocabularyItem | undefined = words[cardIndex];
   const progress = Math.round((cardIndex / Math.max(words.length, 1)) * 100);
 
-  const langLabel: Record<string, string> = {
-    en: "🇬🇧 English",
-    de: "🇩🇪 Deutsch",
-    it: "🇮🇹 Italiano",
-    fr: "🇫🇷 Français",
-    sv: "🇸🇪 Svenska",
-    tr: "🇹🇷 Türkçe",
-  };
-
   const handleNext = (knew: boolean) => {
     if (!current) return;
     if (knew) setKnown((prev) => [...prev, current.id]);
     setFlipped(false);
     setScore(null);
+
     if (cardIndex + 1 >= words.length) {
       const knownCount = known.length + (knew ? 1 : 0);
       const scorePercent = Math.round((knownCount / words.length) * 100);
@@ -109,6 +112,7 @@ export default function FlashcardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
         <button
           onClick={() => navigate("/dashboard")}
@@ -126,6 +130,7 @@ export default function FlashcardPage() {
         </span>
       </div>
 
+      {/* Progress bar */}
       <div className="h-2 bg-gray-100">
         <div
           className="h-2 bg-red-500 transition-all duration-500"
@@ -137,7 +142,7 @@ export default function FlashcardPage() {
       </p>
 
       <div className="max-w-md mx-auto px-4 py-2">
-        {/* Card */}
+        {/* Flashcard */}
         <div
           onClick={() => setFlipped(!flipped)}
           className="cursor-pointer mb-4"
@@ -173,6 +178,7 @@ export default function FlashcardPage() {
               )}
               <p className="text-xs text-gray-300">{t("tapToFlip")}</p>
             </div>
+
             {/* Back — Native language */}
             <div
               style={{
@@ -186,7 +192,9 @@ export default function FlashcardPage() {
                 {langLabel[lang] ?? "🌍"}
               </span>
               <p className="text-3xl md:text-4xl font-black text-gray-900 text-center">
-                {current?.wordEnglish}
+                {current
+                  ? getWordInLang(current, lang as SupportedLanguage)
+                  : ""}
               </p>
               {current?.exampleSentence && (
                 <p className="text-xs md:text-sm text-teal-700 bg-teal-50 rounded-xl px-3 py-2 text-center leading-relaxed">
@@ -238,6 +246,7 @@ export default function FlashcardPage() {
           </button>
         </div>
 
+        {/* Learned words */}
         {known.length > 0 && (
           <div className="bg-blue-50 rounded-2xl p-3 md:p-4">
             <p className="text-xs font-black text-blue-700 uppercase tracking-wide mb-2">

@@ -30,6 +30,11 @@ export interface VocabularyItem {
   id: string;
   wordAlbanian: string;
   wordEnglish: string;
+  wordGerman: string;
+  wordItalian: string;
+  wordFrench: string;
+  wordSwedish: string;
+  wordTurkish: string;
   phonetic?: string;
   exampleSentence?: string;
   audioFileUrl?: string;
@@ -64,4 +69,13 @@ export interface QuizQuestion {
   correctAnswer: string;
   options: string[];
   explanation: string;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  iconUrl: string;
+  category: string;
+  isEarned: boolean;
 }

@@ -1,8 +1,10 @@
 using MediatR;
 using MesoShqip.Application.Features.Progress.Commands;
 using MesoShqip.Application.Features.Progress.Queries;
+using MesoShqip.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace MesoShqip.API.Controllers;
 
@@ -12,10 +14,12 @@ namespace MesoShqip.API.Controllers;
 public class ProgressController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly AppDbContext _context;
 
-    public ProgressController(ISender mediator)
+    public ProgressController(ISender mediator, AppDbContext context)
     {
         _mediator = mediator;
+        _context = context;
     }
 
     [HttpGet("summary")]
@@ -35,5 +39,37 @@ public class ProgressController : ControllerBase
         if (!result.IsSuccess)
             return BadRequest(new { error = result.Error });
         return Ok(new { message = "Progresi u përditësua." });
+    }
+
+    [HttpPost("award-badges")]
+    public async Task<IActionResult> AwardBadges(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new AwardBadgesCommand(), ct);
+        return Ok(result.Data);
+    }
+
+    [HttpGet("badges")]
+    public async Task<IActionResult> GetBadges(CancellationToken ct)
+    {
+        var userId = HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return Unauthorized();
+
+        var earned = await _context.UserBadges
+            .Where(ub => ub.UserId == Guid.Parse(userId))
+            .Select(ub => ub.BadgeId)
+            .ToListAsync(ct);
+
+        var allBadges = await _context.Badges
+            .Select(b => new {
+                b.Id,
+                b.Name,
+                b.Description,
+                b.IconUrl,
+                b.Category,
+                IsEarned = earned.Contains(b.Id)
+            })
+            .ToListAsync(ct);
+
+        return Ok(allBadges);
     }
 }
