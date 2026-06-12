@@ -43,12 +43,7 @@ public static class DependencyInjection
                         Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!))
                 };
             });
-        services.AddHttpClient<IStoryGeneratorService, StoryGeneratorService>(client =>
-        {
-            client.DefaultRequestHeaders.Add("x-api-key", configuration["Anthropic:ApiKey"]);
-            client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
-            client.Timeout = TimeSpan.FromSeconds(60);
-        });
+        services.AddScoped<IStoryGeneratorService, StoryGeneratorService>();
 
         services.AddHttpClient<IQuizGeneratorService, QuizGeneratorService>(client =>
         {

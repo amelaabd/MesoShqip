@@ -5,7 +5,6 @@ import { getProgressSummary } from "../../api/progress";
 import { useAuthStore } from "../../store/authStore";
 import { useLogout } from "../../hooks/useAuth";
 import { useTranslation } from "../../hooks/useTranslation";
-import type { Lesson } from "../../types";
 
 const langFlags: Record<string, string> = {
   en: "🇬🇧",
@@ -27,25 +26,14 @@ export default function DashboardPage() {
     queryFn: getProgressSummary,
   });
 
-  // Fix: Provide a default level parameter or get it from user's progress
   const { data: lessons, isLoading: lessonsLoading } = useQuery({
     queryKey: ["lessons"],
-    queryFn: () => getLessons("beginner"), // Provide a level parameter
+    queryFn: () => getLessons(),
   });
-
-  if (lessonsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="text-4xl mb-3 animate-pulse">🦅</div>
-          <p className="text-gray-400 font-bold text-sm">Duke ngarkuar...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
       <nav className="bg-white border-b border-gray-100 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-10">
         <h1 className="text-xl md:text-2xl font-black text-red-600">
           Mëso<span className="text-teal-500">Shqip</span>
@@ -59,7 +47,7 @@ export default function DashboardPage() {
           </button>
           <button
             onClick={logout}
-            className="text-sm font-bold text-gray-400 hover:text-red-500"
+            className="text-sm font-bold text-gray-400 hover:text-red-500 hidden md:block"
           >
             {t("logout")}
           </button>
@@ -78,8 +66,7 @@ export default function DashboardPage() {
           </h2>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-bold">
-              {langFlags[nativeLanguage] ?? "🌍"}{" "}
-              {nativeLanguage?.toUpperCase() ?? "EN"}
+              {langFlags[nativeLanguage] ?? "🌍"} {nativeLanguage.toUpperCase()}
             </span>
             <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-bold">
               📚 {progress?.currentLevel ?? "Fillestor"}
@@ -139,11 +126,25 @@ export default function DashboardPage() {
           {t("lessons")}
         </h3>
         <div className="grid gap-3">
-          {lessons && lessons.length > 0 ? (
-            lessons.map((lesson: Lesson) => (
+          {lessonsLoading ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+              <p className="text-3xl mb-2 animate-pulse">📚</p>
+              <p className="text-gray-400 font-semibold text-sm">
+                {t("loading")}
+              </p>
+            </div>
+          ) : !lessons || lessons.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+              <p className="text-3xl mb-2">📚</p>
+              <p className="text-gray-400 font-semibold text-sm">
+                {t("noLessons")}
+              </p>
+            </div>
+          ) : (
+            lessons.map((lesson) => (
               <div
                 key={lesson.id}
-                className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-md transition-all cursor-pointer"
+                className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
                 onClick={() => navigate(`/lesson/${lesson.id}`)}
               >
                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-red-50 flex items-center justify-center text-lg md:text-xl flex-shrink-0">
@@ -163,7 +164,7 @@ export default function DashboardPage() {
                 >
                   <button
                     onClick={() => navigate(`/quiz/${lesson.id}`)}
-                    className="px-2 md:px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full hover:bg-purple-200"
+                    className="px-2 md:px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full hover:bg-purple-200 active:scale-95"
                   >
                     {t("quiz")}
                   </button>
@@ -171,10 +172,6 @@ export default function DashboardPage() {
                 </div>
               </div>
             ))
-          ) : (
-            <div className="text-center py-8 text-gray-400">
-              <p className="text-sm">No lessons available</p>
-            </div>
           )}
         </div>
       </div>
