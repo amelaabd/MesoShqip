@@ -171,11 +171,7 @@ export default function FlashcardPage() {
               <p className="text-4xl md:text-5xl font-black text-gray-900 text-center">
                 {current?.wordAlbanian}
               </p>
-              {current?.phonetic && (
-                <p className="text-sm text-gray-400 italic">
-                  [{current.phonetic}]
-                </p>
-              )}
+              {/* phonetic i fshirë me kërkesë */}
               <p className="text-xs text-gray-300">{t("tapToFlip")}</p>
             </div>
 
