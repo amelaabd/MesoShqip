@@ -1,6 +1,7 @@
 using MediatR;
 using MesoShqip.Application.Features.Progress.Commands;
 using MesoShqip.Application.Features.Progress.Queries;
+using MesoShqip.Application.Interfaces;
 using MesoShqip.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -71,5 +72,38 @@ public class ProgressController : ControllerBase
             .ToListAsync(ct);
 
         return Ok(allBadges);
+    }
+
+    [HttpGet("leaderboard")]
+    public async Task<IActionResult> GetLeaderboard(CancellationToken ct)
+    {
+        var leaderboard = await _context.Users
+            .Where(u => u.Role != "Admin")
+            .OrderByDescending(u => u.TotalPoints)
+            .Take(20)
+            .Select(u => new
+            {
+                u.Username,
+                u.TotalPoints,
+                u.CurrentStreak,
+                Level = u.Level.ToString()
+            })
+            .ToListAsync(ct);
+
+        return Ok(leaderboard);
+    }
+
+    [HttpGet("certificate")]
+    public async Task<IActionResult> GetCertificate(
+    [FromServices] ICertificateService certService, CancellationToken ct)
+    {
+        var userId = HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return Unauthorized();
+
+        var user = await _context.Users.FindAsync([Guid.Parse(userId)], ct);
+        if (user is null) return NotFound();
+
+        var pdf = certService.GenerateCertificate(user.Username, user.Level.ToString(), DateTime.UtcNow);
+        return File(pdf, "application/pdf", "certifikata.pdf");
     }
 }

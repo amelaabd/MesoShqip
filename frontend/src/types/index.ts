@@ -79,3 +79,14 @@ export interface Badge {
   category: string;
   isEarned: boolean;
 }
+
+export interface LessonWithProgress {
+  id: string;
+  titleAlbanian: string;
+  titleEnglish: string;
+  level: string;
+  lessonType: string;
+  orderIndex: number;
+  vocabularyCount: number;
+  progress: number;
+}

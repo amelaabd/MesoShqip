@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
 import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
 import OnboardingPage from "./pages/Onboarding/OnboardingPage";
@@ -10,8 +11,10 @@ import FlashcardPage from "./pages/Lesson/FlashcardPage";
 import QuizPage from "./pages/Lesson/QuizPage";
 import StoryPage from "./pages/Story/StoryPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
+import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import AdminRoute from "./components/Layout/AdminRoute";
+import { useThemeStore } from "./store/themeStore";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,6 +23,13 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
+  // ✅ Përdor (state) me tipin e duhur
+  const isDark = useThemeStore((state: { isDark: boolean }) => state.isDark);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -74,6 +84,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <StoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leaderboard"
+            element={
+              <ProtectedRoute>
+                <LeaderboardPage />
               </ProtectedRoute>
             }
           />

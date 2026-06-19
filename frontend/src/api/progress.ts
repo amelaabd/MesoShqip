@@ -23,3 +23,9 @@ export const awardBadges = async () => {
   const res = await apiClient.post("/api/v1/progress/award-badges");
   return res.data;
 };
+
+// Shto këtë funksion
+export const getLeaderboard = async () => {
+  const res = await apiClient.get("/api/v1/progress/leaderboard");
+  return res.data;
+};

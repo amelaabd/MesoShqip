@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getLessonById } from "../../api/lessons";
@@ -6,6 +6,7 @@ import { updateProgress, awardBadges } from "../../api/progress";
 import { useTranslation } from "../../hooks/useTranslation";
 import { getWordInLang } from "../../utils/wordByLang";
 import type { SupportedLanguage } from "../../i18n/translations";
+import confetti from "canvas-confetti";
 
 interface Question {
   question: string;
@@ -58,6 +59,21 @@ export default function QuizPage() {
     if (!lesson?.vocabularyItems?.length) return [];
     return buildQuestions(lesson.vocabularyItems, lang as SupportedLanguage);
   }, [lesson, lang]);
+
+  useEffect(() => {
+    if (finished) {
+      const totalCorrect = correct + (chosen === current?.correct ? 1 : 0);
+      const pct = Math.round((totalCorrect / questions.length) * 100);
+      if (pct >= 80) {
+        confetti({
+          particleCount: 150,
+          spread: 90,
+          origin: { y: 0.6 },
+          colors: ["#E8294A", "#16A97A", "#F5A623"],
+        });
+      }
+    }
+  }, [finished]);
 
   if (isLoading)
     return (

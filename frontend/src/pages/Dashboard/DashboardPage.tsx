@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { getLessons } from "../../api/lessons";
+import { getLessonsWithProgress } from "../../api/lessons";
 import { getProgressSummary } from "../../api/progress";
 import { useAuthStore } from "../../store/authStore";
 import { useLogout } from "../../hooks/useAuth";
@@ -27,8 +27,8 @@ export default function DashboardPage() {
   });
 
   const { data: lessons, isLoading: lessonsLoading } = useQuery({
-    queryKey: ["lessons"],
-    queryFn: () => getLessons(),
+    queryKey: ["lessons-progress"],
+    queryFn: getLessonsWithProgress,
   });
 
   return (
@@ -44,6 +44,12 @@ export default function DashboardPage() {
             className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center font-black text-red-600 text-sm hover:bg-red-200 transition-all"
           >
             {username?.[0]?.toUpperCase() ?? "U"}
+          </button>
+          <button
+            onClick={() => navigate("/leaderboard")}
+            className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center hover:bg-amber-200 transition-all"
+          >
+            🏆
           </button>
           <button
             onClick={logout}
@@ -73,6 +79,16 @@ export default function DashboardPage() {
             </span>
           </div>
         </div>
+
+        {/* Streak Notification */}
+        {progress && progress.currentStreak >= 2 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-5 flex items-center gap-3">
+            <span className="text-2xl">🔥</span>
+            <p className="text-sm font-bold text-amber-700">
+              {progress.currentStreak} {t("days")} {t("streak").toLowerCase()}!
+            </p>
+          </div>
+        )}
 
         {/* Stats */}
         {progress && (
@@ -154,9 +170,17 @@ export default function DashboardPage() {
                   <p className="font-black text-gray-800 text-sm md:text-base truncate">
                     {lesson.titleAlbanian}
                   </p>
-                  <p className="text-xs md:text-sm text-gray-400">
+                  <p className="text-xs md:text-sm text-gray-400 mb-1">
                     {lesson.level} · {lesson.vocabularyCount} {t("words")}
                   </p>
+                  {lesson.progress > 0 && (
+                    <div className="w-full h-1.5 bg-gray-100 rounded-full">
+                      <div
+                        className="h-1.5 bg-teal-500 rounded-full transition-all"
+                        style={{ width: `${lesson.progress}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div
                   className="flex items-center gap-2 flex-shrink-0"
